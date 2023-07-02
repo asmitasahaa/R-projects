@@ -1,0 +1,56 @@
+# I used the following code to produce a grouped bar chart of three variables, split into two groups. 
+# The two groups were participants in low bias and high bias. The three variables were mean values of community service, imprisonment and monetary commitment sentences. 
+
+# Install and load the following libraries 
+install.packages(tidyr) 
+install.packages(ggplot2) 
+install.packages(dplyr) 
+
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+
+# Set working directory 
+
+# Load data 
+# This particular data set was a SPSS file. 
+
+dissertation <- haven::read_sav("edited version FINAL.sav")
+
+# Pivot data from wide to long format 
+# Pivoting was done as I had several variables 
+# MEAN_IMPRISONMENT refers to the mean values of the imprisonment punishment type 
+# MEAN_COMMUNITYSERVICE refers to the mean values of the community service punishment type 
+# MEAN_MONETARYCOMMITMENT refers to the mean values of the monetary commitment punishment type 
+
+dissertation_long <- pivot_longer(dissertation, 
+                                  cols = c("MEAN_IMPRISONMENT", 
+                                           "MEAN_COMMUNITYSERVICE", 
+                                           "MEAN_MONETARYCOMMITMENT"), 
+                                  names_to = "group", 
+                                  values_to = "harshness_score")
+
+# The means and standard errors were not present in the data set. 
+# Hence, calculate the means and standard errors of each variable. 
+# PJAQ_Group refers to the low and high bias groups respectively. 
+
+graphs <- dissertation_long %>% 
+  group_by(PJAQ_Group, group) %>% 
+  summarize(mean_harshness = mean(harshness_score),
+            se = sd(harshness_score)/sqrt(n()))
+
+# Plot the grouped bar chart with error bars 
+
+ggplot(graphs, aes(x = Age_Group, y = mean_harshness, fill = group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(aes(ymin = mean_harshness - se, ymax = mean_harshness + se), 
+                position = position_dodge(0.9), 
+                width = 0.25) +
+  labs(title = "Grouped Bar Chart of Harshness Scores by Age", 
+       x = "", 
+       y = "Level of harshness in sentences", 
+       fill = "Group",
+       subtitle = "Comparison of Imprisonment, Community Service, and Monetary Commitment") +
+  theme_bw() + 
+  scale_y_continuous(limits = c(0, 5), expand = c(0, 0)) 
+
